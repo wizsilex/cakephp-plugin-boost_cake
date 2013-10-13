@@ -34,13 +34,14 @@ class BoostCakeFormHelperTest extends CakeTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$View = new View();
-		$this->Form = new BoostCakeFormHelper($View);
+		$this->View = new View();
+		$this->Form = new BoostCakeFormHelper($this->View);
 
 		ClassRegistry::addObject('Contact', new Contact());
 	}
 
 	public function tearDown() {
+		unset($this->View);
 		unset($this->Form);
 	}
 
@@ -178,6 +179,26 @@ class BoostCakeFormHelperTest extends CakeTestCase {
 		));
 	}
 
+	public function testCheckboxLabelEscape() {
+		$result = $this->Form->input('name', array(
+			'type' => 'checkbox',
+			'label' => 'I want $1'
+		));
+		$this->assertTags($result, array(
+			array('div' => array()),
+			array('div' => array('class' => 'input checkbox')),
+			array('div' => array('class' => 'checkbox')),
+			array('input' => array('type' => 'hidden', 'name' => 'data[name]', 'id' => 'name_', 'value' => '0')),
+			'label' => array('for' => 'name'),
+			array('input' => array('name' => 'data[name]', 'type' => 'checkbox', 'value' => '1', 'id' => 'name')),
+			' I want $1',
+			'/label',
+			'/div',
+			'/div',
+			'/div'
+		));
+	}
+
 	public function testSelectMultipleCheckbox() {
 		$result = $this->Form->select('name',
 			array(
@@ -289,6 +310,27 @@ class BoostCakeFormHelperTest extends CakeTestCase {
 			),
 			'/div',
 			'/div'
+		));
+	}
+
+	public function testPostLink() {
+		$result = $this->Form->postLink('Delete', '/posts/delete/1', array(
+			'block' => 'form'
+		));
+		$this->assertTags($result, array(
+			'a' => array('href' => '#', 'onclick' => 'preg:/document\.post_\w+\.submit\(\); event\.returnValue = false; return false;/'),
+			'Delete',
+			'/a'
+		));
+
+		$result = $this->View->fetch('form');
+		$this->assertTags($result, array(
+			'form' => array(
+				'method' => 'post', 'action' => '/posts/delete/1',
+				'name' => 'preg:/post_\w+/', 'id' => 'preg:/post_\w+/', 'style' => 'display:none;'
+			),
+			'input' => array('type' => 'hidden', 'name' => '_method', 'value' => 'POST'),
+			'/form'
 		));
 	}
 
