@@ -34,13 +34,14 @@ class BoostCakeFormHelperTest extends CakeTestCase {
 
 	public function setUp() {
 		parent::setUp();
-		$View = new View();
-		$this->Form = new BoostCakeFormHelper($View);
+		$this->View = new View();
+		$this->Form = new BoostCakeFormHelper($this->View);
 
 		ClassRegistry::addObject('Contact', new Contact());
 	}
 
 	public function tearDown() {
+		unset($this->View);
 		unset($this->Form);
 	}
 
@@ -178,6 +179,26 @@ class BoostCakeFormHelperTest extends CakeTestCase {
 		));
 	}
 
+	public function testCheckboxLabelEscape() {
+		$result = $this->Form->input('name', array(
+			'type' => 'checkbox',
+			'label' => 'I want $1'
+		));
+		$this->assertTags($result, array(
+			array('div' => array()),
+			array('div' => array('class' => 'input checkbox')),
+			array('div' => array('class' => 'checkbox')),
+			array('input' => array('type' => 'hidden', 'name' => 'data[name]', 'id' => 'name_', 'value' => '0')),
+			'label' => array('for' => 'name'),
+			array('input' => array('name' => 'data[name]', 'type' => 'checkbox', 'value' => '1', 'id' => 'name')),
+			' I want $1',
+			'/label',
+			'/div',
+			'/div',
+			'/div'
+		));
+	}
+
 	public function testSelectMultipleCheckbox() {
 		$result = $this->Form->select('name',
 			array(
@@ -198,6 +219,34 @@ class BoostCakeFormHelperTest extends CakeTestCase {
 			'/label',
 			array('label' => array('for' => 'Name2', 'class' => 'checkbox-inline')),
 			array('input' => array('type' => 'checkbox', 'name' => 'data[name][]', 'value' => '2', 'id' => 'Name2')),
+			' two',
+			'/label',
+			array('label' => array('for' => 'Name3', 'class' => 'checkbox-inline')),
+			array('input' => array('type' => 'checkbox', 'name' => 'data[name][]', 'value' => '3', 'id' => 'Name3')),
+			' three',
+			'/label'
+		));
+
+		$result = $this->Form->select('name',
+			array(
+				1 => 'one',
+				2 => 'two',
+				3 => 'three'
+			),
+			array(
+				'multiple' => 'checkbox',
+				'class' => 'checkbox-inline',
+				'value' => 2
+			)
+		);
+		$this->assertTags($result, array(
+			array('input' => array('type' => 'hidden', 'name' => 'data[name]', 'value' => '', 'id' => 'name')),
+			array('label' => array('for' => 'Name1', 'class' => 'checkbox-inline')),
+			array('input' => array('type' => 'checkbox', 'name' => 'data[name][]', 'value' => '1', 'id' => 'Name1')),
+			' one',
+			'/label',
+			array('label' => array('for' => 'Name2', 'class' => 'selected checkbox-inline')),
+			array('input' => array('type' => 'checkbox', 'name' => 'data[name][]', 'value' => '2', 'id' => 'Name2', 'checked' => 'checked')),
 			' two',
 			'/label',
 			array('label' => array('for' => 'Name3', 'class' => 'checkbox-inline')),
@@ -238,6 +287,36 @@ class BoostCakeFormHelperTest extends CakeTestCase {
 			' fred jr.',
 			'/label',
 			'/fieldset'
+		));
+	}
+
+	public function testRadio() {
+		$result = $this->Form->input('name', array(
+			'type' => 'radio',
+			'options' => array(
+				'one' => 'This is one',
+				'two' => 'This is two'
+			)
+		));
+		$this->assertTags($result, array(
+			array('div' => array()),
+			array('div' => array('class' => 'input radio')),
+			'fieldset' => array(),
+			'legend' => array(),
+			'Name',
+			'/legend',
+			array('input' => array('type' => 'hidden', 'name' => 'data[name]', 'id' => 'name_', 'value' => '')),
+			array('label' => array('for' => 'nameOne', 'class' => 'radio')),
+			array('input' => array('name' => 'data[name]', 'type' => 'radio', 'value' => 'one', 'id' => 'nameOne')),
+			' This is one',
+			'/label',
+			array('label' => array('for' => 'nameTwo', 'class' => 'radio')),
+			array('input' => array('name' => 'data[name]', 'type' => 'radio', 'value' => 'two', 'id' => 'nameTwo')),
+			' This is two',
+			'/label',
+			'/fieldset',
+			'/div',
+			'/div'
 		));
 	}
 
@@ -289,6 +368,58 @@ class BoostCakeFormHelperTest extends CakeTestCase {
 			),
 			'/div',
 			'/div'
+		));
+
+		$result = $this->Form->input('Contact.password', array(
+			'div' => 'control-group',
+			'label' => array(
+				'class' => 'control-label'
+			),
+			'wrapInput' => 'controls',
+			'beforeInput' => '<div class="input-append">',
+			'afterInput' => '<span class="add-on">AddOn</span></div>'
+		));
+		$this->assertTags($result, array(
+			array('div' => array('class' => 'control-group has-error error')),
+			'label' => array('for' => 'ContactPassword', 'class' => 'control-label'),
+			'Password',
+			'/label',
+			array('div' => array('class' => 'controls')),
+			array('div' => array('class' => 'input-append')),
+			'input' => array(
+				'type' => 'password', 'name' => 'data[Contact][password]',
+				'id' => 'ContactPassword', 'class' => 'form-error'
+			),
+			array('span' => array('class' => 'add-on')),
+			'AddOn',
+			'/span',
+			'/div',
+			array('span' => array('class' => 'help-block text-danger')),
+			'Please provide a password',
+			'/span',
+			'/div',
+			'/div'
+		));
+	}
+
+	public function testPostLink() {
+		$result = $this->Form->postLink('Delete', '/posts/delete/1', array(
+			'block' => 'form'
+		));
+		$this->assertTags($result, array(
+			'a' => array('href' => '#', 'onclick' => 'preg:/document\.post_\w+\.submit\(\); event\.returnValue = false; return false;/'),
+			'Delete',
+			'/a'
+		));
+
+		$result = $this->View->fetch('form');
+		$this->assertTags($result, array(
+			'form' => array(
+				'method' => 'post', 'action' => '/posts/delete/1',
+				'name' => 'preg:/post_\w+/', 'id' => 'preg:/post_\w+/', 'style' => 'display:none;'
+			),
+			'input' => array('type' => 'hidden', 'name' => '_method', 'value' => 'POST'),
+			'/form'
 		));
 	}
 
